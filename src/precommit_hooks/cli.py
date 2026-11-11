@@ -1,0 +1,96 @@
+"""CLI entry point. Commands are imported lazily — see `_build_app`."""
+
+from __future__ import annotations
+
+import sys
+from collections.abc import Sequence
+from typing import Any
+
+_TOP_LEVEL_COMMANDS = ("hello",)
+
+
+def _build_app() -> Any:
+    """Build the fully-wired cyclopts App.
+
+    Command modules are imported here rather than at module scope so that
+    `import precommit_hooks.cli` stays cheap and the `__complete` fast path in
+    `main` never pays for them.
+    """
+    from cyclopts import App
+
+    from precommit_hooks import __version__
+    from precommit_hooks.commands import hello as cmd_hello
+
+    app = App(
+        name="precommit-hooks",
+        help="Shared pre-commit hooks, run with prek",
+        version=__version__,
+        # Commands return their value; the CLI layer prints it (see `hello`
+        # below). Cyclopts' default result_action would auto-print any non-None
+        # return itself (double-printing) and sys.exit() even on a None result,
+        # which breaks main()'s "returns normally on success" contract and its
+        # single deliberate sys.exit(1) for ValueError.
+        result_action="return_value",
+    )
+
+    def hello(name: str = "world", *, shout: bool = False) -> None:
+        """Greet someone.
+
+        Args:
+            name: Who to greet.
+            shout: Uppercase the greeting.
+        """
+        print(cmd_hello.run(name, shout=shout))
+
+    app.command(hello, name="hello")
+    return app
+
+
+def _complete(*tokens: str) -> None:
+    """Emit completion candidates, one per line. Quoting is the shell's job."""
+    prefix = tokens[-1] if tokens else ""
+    for candidate in _TOP_LEVEL_COMMANDS:
+        if candidate.startswith(prefix):
+            print(candidate)
+
+
+def _dispatch_complete(tokens: Sequence[str]) -> bool:
+    """Run `_complete` if `tokens` request it; return whether it ran.
+
+    cyclopts 5 reserves `__complete` for its own completion engine and claims it
+    before command lookup, so this protocol is dispatched ahead of cyclopts.
+    """
+    if list(tokens[:1]) != ["__complete"]:
+        return False
+    _complete(*tokens[1:])
+    return True
+
+
+_app_cache: Any = None
+
+
+def get_app() -> Any:
+    """Return the cyclopts App, building it on first call."""
+    global _app_cache
+    if _app_cache is None:
+        _app_cache = _build_app()
+    return _app_cache
+
+
+def app(*args: Any, **kwargs: Any) -> Any:
+    """Proxy so the lazy build stays transparent to callers and tests."""
+    if args and isinstance(args[0], (list, tuple)) and _dispatch_complete(args[0]):
+        return None
+    return get_app()(*args, **kwargs)
+
+
+def main() -> None:
+    """Entry point. Usage errors exit 2; known exceptions become one stderr line, exit 1."""
+    if _dispatch_complete(sys.argv[1:]):
+        return
+
+    try:
+        app()
+    except ValueError as exc:
+        print(f"precommit-hooks: {exc}", file=sys.stderr)
+        sys.exit(1)
