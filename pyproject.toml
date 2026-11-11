@@ -7,8 +7,10 @@ license = "Apache-2.0"
 license-files = ["LICENSE"]
 requires-python = ">=3.11"
 authors = [{ name = "Robin Bowes" }]
+# Exact: prek installs the hook without uv.lock, so a range floats per consumer.
 dependencies = [
-    "cyclopts>=5.3.3",
+    "cyclopts==5.3.3",
+    "pydantic==2.14.2",
 ]
 
 [project.scripts]

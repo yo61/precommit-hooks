@@ -1,0 +1,8 @@
+- id: pins-agree
+  name: pins agree
+  description: Fail when pins that must name one version, such as an image tag and CI's, differ.
+  entry: pins-agree
+  language: python
+  # The pins are named in .pins-agree.toml, not by the changed files.
+  pass_filenames: false
+  always_run: true

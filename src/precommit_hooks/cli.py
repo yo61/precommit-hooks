@@ -1,96 +1,50 @@
-"""CLI entry point. Commands are imported lazily — see `_build_app`."""
+"""Command-line entry point for the `pins-agree` hook."""
 
 from __future__ import annotations
 
 import sys
-from collections.abc import Sequence
-from typing import Any
+from pathlib import Path
 
-_TOP_LEVEL_COMMANDS = ("hello",)
+from cyclopts import App
+
+from precommit_hooks import __version__
+from precommit_hooks.pins_agree.check import check
+from precommit_hooks.pins_agree.config import DEFAULT_PATH, ConfigError, load
+
+app = App(
+    name="pins-agree",
+    help="Fail when pins that must name one version disagree.",
+    version=__version__,
+    # main() exits with the returned status; the default action would print it.
+    result_action="return_value",
+)
 
 
-def _build_app() -> Any:
-    """Build the fully-wired cyclopts App.
+@app.default
+def pins_agree(*, config: Path = DEFAULT_PATH) -> int:
+    """Check that every group in the configuration names one version.
 
-    Command modules are imported here rather than at module scope so that
-    `import precommit_hooks.cli` stays cheap and the `__complete` fast path in
-    `main` never pays for them.
+    File globs are relative to the current directory, which is the repository root when prek
+    runs the hook.
+
+    Args:
+        config: The configuration file.
+
+    Returns:
+        0 when every group agrees, 1 when any does not.
     """
-    from cyclopts import App
-
-    from precommit_hooks import __version__
-    from precommit_hooks.commands import hello as cmd_hello
-
-    app = App(
-        name="precommit-hooks",
-        help="Shared pre-commit hooks, run with prek",
-        version=__version__,
-        # Commands return their value; the CLI layer prints it (see `hello`
-        # below). Cyclopts' default result_action would auto-print any non-None
-        # return itself (double-printing) and sys.exit() even on a None result,
-        # which breaks main()'s "returns normally on success" contract and its
-        # single deliberate sys.exit(1) for ValueError.
-        result_action="return_value",
-    )
-
-    def hello(name: str = "world", *, shout: bool = False) -> None:
-        """Greet someone.
-
-        Args:
-            name: Who to greet.
-            shout: Uppercase the greeting.
-        """
-        print(cmd_hello.run(name, shout=shout))
-
-    app.command(hello, name="hello")
-    return app
-
-
-def _complete(*tokens: str) -> None:
-    """Emit completion candidates, one per line. Quoting is the shell's job."""
-    prefix = tokens[-1] if tokens else ""
-    for candidate in _TOP_LEVEL_COMMANDS:
-        if candidate.startswith(prefix):
-            print(candidate)
-
-
-def _dispatch_complete(tokens: Sequence[str]) -> bool:
-    """Run `_complete` if `tokens` request it; return whether it ran.
-
-    cyclopts 5 reserves `__complete` for its own completion engine and claims it
-    before command lookup, so this protocol is dispatched ahead of cyclopts.
-    """
-    if list(tokens[:1]) != ["__complete"]:
-        return False
-    _complete(*tokens[1:])
-    return True
-
-
-_app_cache: Any = None
-
-
-def get_app() -> Any:
-    """Return the cyclopts App, building it on first call."""
-    global _app_cache
-    if _app_cache is None:
-        _app_cache = _build_app()
-    return _app_cache
-
-
-def app(*args: Any, **kwargs: Any) -> Any:
-    """Proxy so the lazy build stays transparent to callers and tests."""
-    if args and isinstance(args[0], (list, tuple)) and _dispatch_complete(args[0]):
-        return None
-    return get_app()(*args, **kwargs)
+    problems = check(load(config), Path.cwd())
+    for problem in problems:
+        for line in problem.lines():
+            print(f"pins-agree: {line}", file=sys.stderr)
+    return 1 if problems else 0
 
 
 def main() -> None:
-    """Entry point. Usage errors exit 2; known exceptions become one stderr line, exit 1."""
-    if _dispatch_complete(sys.argv[1:]):
-        return
-
+    """Exit 0 when every group agrees, 1 on a disagreement or a bad config, 2 on a usage error."""
     try:
-        app()
-    except ValueError as exc:
-        print(f"precommit-hooks: {exc}", file=sys.stderr)
+        status = app()
+    except ConfigError as exc:
+        print(f"pins-agree: {exc}", file=sys.stderr)
         sys.exit(1)
+    sys.exit(status or 0)
