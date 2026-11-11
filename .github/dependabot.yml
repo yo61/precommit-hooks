@@ -1,5 +1,5 @@
 # Dependabot keeps the ecosystems below; Renovate (renovate.json5) keeps the runner image, the
-# Python, Node, pnpm and task versions, and the tool versions CI installs. Each pin has one owner.
+# Python and task versions, and the tool versions CI installs. Each pin has one owner.
 
 version: 2
 
@@ -50,31 +50,4 @@ updates:
       prefix: "chore(deps)"
     groups:
       actions-minor-patch:
-        update-types: ["minor", "patch"]
-
-  # docs/site is pnpm-managed; Dependabot auto-detects pnpm-lock.yaml.
-  - package-ecosystem: "npm"
-    directory: "/docs/site"
-    schedule:
-      interval: "weekly"
-    # 1 day here, not the 7 used by the other ecosystems. Dependabot maps
-    # cooldown onto pnpm's minimumReleaseAge, and pnpm treats it as a hard
-    # resolution failure rather than falling back to an older version -- so a
-    # single TRANSITIVE dep published inside the window fails the whole update
-    # (ERR_PNPM_NO_MATURE_MATCHING_VERSION). The Next/fumadocs tree moves fast
-    # enough that a 7-day window broke most runs. 1 day still enforces the
-    # 24-hour publish delay the house standard asks for.
-    cooldown:
-      # jactionlint ignore=dependabot-cooldown
-      default-days: 1
-    commit-message:
-      prefix: "chore(deps)"
-    ignore:
-      # TypeScript 7.x is the native (Go) compiler; it drops the JS compiler
-      # API that `next build` loads for type-checking. Hold on 6.x until the
-      # Next/fumadocs toolchain supports it.
-      - dependency-name: "typescript"
-        update-types: ["version-update:semver-major"]
-    groups:
-      npm-minor-patch:
         update-types: ["minor", "patch"]

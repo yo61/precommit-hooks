@@ -1,7 +1,7 @@
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
 
-  // Two bots update this repository, each owning different pins. Dependabot keeps uv, npm, the
+  // Two bots update this repository, each owning different pins. Dependabot keeps uv, the
   // workflows' action SHAs and the pre-commit hooks (.github/dependabot.yml). Renovate owns the
   // runner image, .python-version, mise.toml and the annotated *_VERSION values in the
   // workflows, and the commitlint hook's config package. enabledManagers keeps it off
@@ -39,15 +39,6 @@
       matchManagers: ["mise"],
       matchDepNames: ["uv"],
       enabled: false,
-    },
-    {
-      // Each tool's CI pin and mise.toml pin move together.
-      matchDepNames: ["node"],
-      groupName: "node",
-    },
-    {
-      matchDepNames: ["pnpm"],
-      groupName: "pnpm",
     },
     {
       matchDepNames: ["go-task/task", "task"],

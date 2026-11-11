@@ -1,6 +1,6 @@
 [project]
 name = "precommit-hooks"
-version = "0.1.7"
+version = "0.0.0"
 description = "Shared pre-commit hooks, run with prek"
 readme = "README.md"
 license = "Apache-2.0"
@@ -43,14 +43,6 @@ build-backend = "uv_build"
 # drifted; see decisions/2026-10-14-uv-lock-revision-flapping.md.
 required-version = ">=0.12.18,<0.14"
 
-[tool.uv.build-backend]
-# Required. uv_build derives the package directory from the distribution
-# name, which normalises `precommit-hooks` to `python_template` -- but the
-# package is `precommit_hooks`. It also covers the case where bootstrap is
-# given a package name that is not derived from the project name; it prompts
-# for both separately. See docs how-to/use-hatchling to swap backends.
-module-name = "precommit_hooks"
-
 [tool.ruff]
 line-length = 100
 target-version = "py311"
@@ -79,17 +71,3 @@ addopts = "-ra --strict-markers --strict-config"
 filterwarnings = [
     "ignore:Cyclopts application invoked without tokens.*:UserWarning",
 ]
-
-# Uncomment together with the layer packages when adopting DDD layering.
-# See docs/site/content/docs/how-to/add-ddd-layers.mdx
-# [tool.importlinter]
-# root_package = "precommit_hooks"
-#
-# [[tool.importlinter.contracts]]
-# name = "DDD layers"
-# type = "layers"
-# layers = [
-#     "precommit_hooks.commands",
-#     "precommit_hooks.application",
-#     "precommit_hooks.domain",
-# ]
