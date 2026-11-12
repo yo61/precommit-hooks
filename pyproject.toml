@@ -1,0 +1,75 @@
+[project]
+name = "precommit-hooks"
+version = "0.0.0"
+description = "Shared pre-commit hooks, run with prek"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+authors = [{ name = "Robin Bowes" }]
+# Exact: prek installs the hook without uv.lock, so a range floats per consumer.
+dependencies = [
+    "cyclopts==5.3.3",
+    "pydantic==2.14.2",
+]
+
+[project.scripts]
+pins-agree = "precommit_hooks.cli:main"
+
+[dependency-groups]
+dev = [
+    "hypothesis>=6.170.14",
+    "pytest>=9.2.0",
+    "pytest-cov>=5",
+    "ruff>=0.17.3",
+    "ty>=0.0.96",
+]
+
+[build-system]
+requires = ["uv_build>=0.13.7,<0.14.0"]
+build-backend = "uv_build"
+
+[tool.uv]
+# Pins uv to the 0.13 series. `setup-uv` reads `tool.uv.required-version`
+# (src/version/file-parser.ts), so CI and the sync-lockfile job install the
+# newest uv in range, the series `mise.toml` provides locally. The floor is
+# 0.12.18 only because Dependabot runs that uv and uv enforces this range:
+# decisions/2026-10-21-uv-0.13-bridge-range.md. Raise it to 0.13 when
+# dependabot-core ships uv 0.13.
+#
+# Never pin the newest patch. mise hides releases younger than its
+# `minimum_release_age`, so it resolves to a version mise will not install
+# for days -- CI green, every local uv command refusing to run.
+#
+# `uv sync --locked` failing in CI is what catches a lockfile that has
+# drifted; see decisions/2026-10-14-uv-lock-revision-flapping.md.
+required-version = ">=0.12.18,<0.14"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF", "TID"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+# TID252 defaults to "parents", which flags `..` and lets `from .base import X`
+# through. "all" is what "absolute imports only" means.
+ban-relative-imports = "all"
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.ty.rules]
+# strict-by-default; tighten as needed
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --strict-config"
+# tests/test_cli.py monkeypatches sys.argv and calls main(), which invokes
+# app() with no tokens so cyclopts reads the replaced argv. That exercises the
+# production argv-reading branch; cyclopts' stack inspection cannot tell it
+# from a forgotten `app([])` and warns. False positive.
+filterwarnings = [
+    "ignore:Cyclopts application invoked without tokens.*:UserWarning",
+]

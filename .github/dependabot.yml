@@ -1,0 +1,56 @@
+# Dependabot keeps the ecosystems below; Renovate (renovate.json5) keeps the runner image, the
+# Python and task versions, and the tool versions CI installs. Each pin has one owner.
+
+version: 2
+
+updates:
+  # Developer tooling; never reaches the published package.
+  - package-ecosystem: "pre-commit"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      hooks:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  # Python. The `uv` ecosystem updates uv.lock as well as the pyproject
+  # constraints; `pip` would leave the lock stale.
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+    commit-message:
+      prefix: "deps"
+      prefix-development: "chore(deps)"
+    groups:
+      uv-production:
+        dependency-type: "production"
+        update-types: ["minor", "patch"]
+      uv-development:
+        dependency-type: "development"
+        update-types: ["minor", "patch"]
+
+  # Actions. Pins are SHAs with version comments; Dependabot rewrites both.
+  # Majors stay outside the group so they arrive as individual PRs.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+      # Our own action's releases skip the cooldown (dependency-updates policy).
+      exclude:
+        - "yo61/commitlint-github-action"
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      actions-minor-patch:
+        update-types: ["minor", "patch"]
