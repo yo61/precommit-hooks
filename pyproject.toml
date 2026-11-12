@@ -1,6 +1,6 @@
 [project]
 name = "precommit-hooks"
-version = "0.0.0"
+version = "0.1.0"
 description = "Shared pre-commit hooks, run with prek"
 readme = "README.md"
 license = "Apache-2.0"
@@ -10,7 +10,7 @@ authors = [{ name = "Robin Bowes" }]
 # Exact: prek installs the hook without uv.lock, so a range floats per consumer.
 dependencies = [
     "cyclopts==5.3.3",
-    "pydantic==2.14.2",
+    "pydantic==2.14.3",
 ]
 
 [project.scripts]
