@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/yo61/precommit-hooks/compare/v0.1.1...v0.1.2) (2026-11-18)
+
+
+### Dependencies
+
+* Bump cyclopts from 5.3.3 to 5.4.1 in the uv-production group ([#10](https://github.com/yo61/precommit-hooks/issues/10)) ([29887a6](https://github.com/yo61/precommit-hooks/commit/29887a6a00f0516b1417cf1f9632ba30ba5d9c16))
+
 ## [0.1.1](https://github.com/yo61/precommit-hooks/compare/v0.1.0...v0.1.1) (2026-11-12)
 
 
