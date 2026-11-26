@@ -1,6 +1,6 @@
 [project]
 name = "precommit-hooks"
-version = "0.1.2"
+version = "0.1.3"
 description = "Shared pre-commit hooks, run with prek"
 readme = "README.md"
 license = "Apache-2.0"
